@@ -99,53 +99,57 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <!-- Set OPENCV_DIR (env var or msbuild /p:) to an OpenCV 3.x "build" folder,
+         e.g. C:\opencv\build, containing include\ and x64\vc14\lib. -->
+    <OPENCV_DIR Condition="'$(OPENCV_DIR)'==''">$(SolutionDir)..\third_party\opencv\build</OPENCV_DIR>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\include;$(SolutionDir)inc;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration);$(LibraryPath);$(OutDir)</LibraryPath>
-    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)</OutDir>
-    <IntDir>$(SolutionDir)Bin\Intermedia\$(PlatformTarget)-$(Configuration)</IntDir>
+    <IncludePath>$(OPENCV_DIR)\include;$(SolutionDir)..\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Bin\Intermediate\$(PlatformTarget)-$(Configuration)\</IntDir>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\include;$(SolutionDir)inc;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration);$(LibraryPath);$(OutDir);$(SolutionDir)..\..\Libs\CyAPI\lib\x64</LibraryPath>
-    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)</OutDir>
-    <IntDir>$(SolutionDir)Bin\Intermedia\$(PlatformTarget)-$(Configuration)</IntDir>
+    <IncludePath>$(OPENCV_DIR)\include;$(SolutionDir)..\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Bin\Intermediate\$(PlatformTarget)-$(Configuration)\</IntDir>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\include;$(SolutionDir)inc;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration);$(LibraryPath);$(OutDir)</LibraryPath>
-    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)</OutDir>
-    <IntDir>$(SolutionDir)Bin\Intermedia\$(PlatformTarget)-$(Configuration)</IntDir>
+    <IncludePath>$(OPENCV_DIR)\include;$(SolutionDir)..\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Bin\Intermediate\$(PlatformTarget)-$(Configuration)\</IntDir>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_static|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\include;$(SolutionDir)inc;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration);$(LibraryPath);$(OutDir)</LibraryPath>
-    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)</OutDir>
-    <IntDir>$(SolutionDir)Bin\Intermedia\$(PlatformTarget)-$(Configuration)</IntDir>
+    <IncludePath>$(OPENCV_DIR)\include;$(SolutionDir)..\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Bin\Intermediate\$(PlatformTarget)-$(Configuration)\</IntDir>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\include;$(SolutionDir)inc;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration);$(OutDir);$(LibraryPath);$(SolutionDir)..\Libs\CyAPI\lib\x64</LibraryPath>
-    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)</OutDir>
-    <IntDir>$(SolutionDir)Bin\Intermedia\$(PlatformTarget)-$(Configuration)</IntDir>
+    <IncludePath>$(OPENCV_DIR)\include;$(SolutionDir)..\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Bin\Intermediate\$(PlatformTarget)-$(Configuration)\</IntDir>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\include;$(SolutionDir)inc;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_BUILD)\$(PlatformTarget)\vc12\lib;$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration);$(OPENCV_BUILD)x64\vc12\lib;$(OutDir);$(LibraryPath);$(SolutionDir)..\Libs\CyAPI\lib\x64</LibraryPath>
-    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)</OutDir>
-    <IntDir>$(SolutionDir)Bin\Intermedia\$(PlatformTarget)-$(Configuration)</IntDir>
+    <IncludePath>$(OPENCV_DIR)\include;$(SolutionDir)..\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Bin\$(PlatformTarget)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Bin\Intermediate\$(PlatformTarget)-$(Configuration)\</IntDir>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -156,16 +160,17 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);PLAT_WINDOWS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opencv_world320d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x86\vc14\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OPENCV_DIR)\x86\vc14\lib\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x86\vc14\bin\opencv_world320d.dll $(OutDir)</Command>
+      <Command>xcopy /y "$(OPENCV_DIR)\x86\vc14\bin\opencv_world320d.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -176,16 +181,17 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);PLAT_WINDOWS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opencv_world320d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x64\vc14\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OPENCV_DIR)\x64\vc14\lib\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x64\vc14\bin\opencv_world320d.dll $(OutDir)
+      <Command>xcopy /y "$(OPENCV_DIR)\x64\vc14\bin\opencv_world320d.dll" "$(OutDir)"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -199,6 +205,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);PLAT_WINDOWS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -207,10 +214,10 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opencv_world320.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x86\vc14\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OPENCV_DIR)\x86\vc14\lib\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x86\vc14\bin\opencv_world320.dll $(OutDir)
+      <Command>xcopy /y "$(OPENCV_DIR)\x86\vc14\bin\opencv_world320.dll" "$(OutDir)"
 </Command>
     </PostBuildEvent>
     <ProjectReference>
@@ -227,6 +234,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);PLAT_WINDOWS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -235,7 +243,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>MSVCRT.lib;zlib.lib;opencv_world320.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x86\vc14\staticlib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OPENCV_DIR)\x86\vc14\staticlib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -255,6 +263,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);PLAT_WINDOWS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -263,10 +272,10 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opencv_world320.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x64\vc14\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OPENCV_DIR)\x64\vc14\lib\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x64\vc14\bin\opencv_world320.dll $(OutDir)
+      <Command>xcopy /y "$(OPENCV_DIR)\x64\vc14\bin\opencv_world320.dll" "$(OutDir)"
 </Command>
     </PostBuildEvent>
     <ProjectReference>
@@ -283,6 +292,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);PLAT_WINDOWS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -291,7 +301,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>zlib.lib;opencv_world320.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Export_Libs\OpenCV\opencv-3.2.0\x64\vc14\staticlib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OPENCV_DIR)\x64\vc14\staticlib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -302,10 +312,8 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="network_streaming.cpp" />
+    <ClCompile Include="..\examples\network_streaming\network_streaming.cpp" />
+    <ClInclude Include="..\include\network_streaming.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

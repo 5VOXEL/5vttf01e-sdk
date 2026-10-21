@@ -1,0 +1,27 @@
+# Build output
+build/
+out/
+vs2015/Bin/
+*.obj
+*.pdb
+*.ipdb
+*.iobj
+*.ilk
+*.exe
+*.dll
+*.lib
+
+# Visual Studio
+.vs/
+*.user
+*.VC.db
+*.VC.opendb
+*.sdf
+*.suo
+*.aps
+ipch/
+CMakeSettings.json
+CMakeUserPresets.json
+
+# Local third-party SDKs (see README)
+third_party/

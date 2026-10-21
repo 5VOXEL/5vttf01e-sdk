@@ -28,31 +28,22 @@ around `=`**. Text responses are padded to a fixed `CMD_RESP_LEN` (128 bytes).
 | `start` | `Streaming started` — starts depth sensing & streaming |
 | `stop` | `Stop Streaming` — stops depth sensing & streaming |
 
-### Frame requests
+### Depth frames
 
-Frame commands return **binary data, not a text response**. All frames are
-80 × 60 pixels, 16-bit little-endian per pixel.
+| Command | Response |
+|---|---|
+| `get depthframe` | 9,600 bytes of **binary** depth data, not a text response |
 
-| Command | Bytes | Layout |
-|---|---|---|
-| `get depthframe` | 9,600 | Depth |
-| `get irframe` | 9,600 | IR (grayscale amplitude) |
-| `get depthirframe` | 19,200 | Depth (9,600) + IR (9,600) |
-| `get h_depthirframe` | 19,208 | Header start (4) + Depth (9,600) + IR (9,600) + Header end (4) |
+A frame is 80 × 60 pixels, one 16-bit little-endian value per pixel, row by
+row (pixel `(x, y)` is at byte offset `(y * 80 + x) * 2`). The sample scales
+depth by `255 / 4096` for display.
 
-Header framing for `get h_depthirframe`:
+Send `start` before requesting frames. Without it, firmware ES_V2.0.9 replies
+to `get depthframe` with 128 zero bytes instead of a frame.
 
-| Offset | Size | Content |
-|---|---|---|
-| 0 | 4 | `F7 F7 00 00` — start marker |
-| 4 | 9,600 | Depth frame |
-| 9,604 | 9,600 | IR frame |
-| 19,204 | 4 | `F8 F8 00 00` — end marker |
-
-Only the first two bytes of each marker are fixed. The last two are reserved
-and may change in future firmware, so don't use them to validate frames.
-
-The sample scales depth by `255 / 4096` and IR by `255 / 1024` for display.
+> **IR frames are not available.** Firmware 2.x removed `get irframe`,
+> `get depthirframe` and `get h_depthirframe` for privacy protection. The device
+> answers them with a 128-byte text reply, `Unknown Cmd (State = 3)`.
 
 ### Device information
 

@@ -4,7 +4,7 @@ Sample code and protocol reference for the **5Voxel 5VTTF01E (VoxelCount)**
 standalone 3D time-of-flight camera.
 
 The 5VTTF01E combines a ToF depth sensor, a 400 MHz AI-capable MCU and a 6-axis
-IMU in one device. Over Ethernet it streams **80 × 60 depth and IR frames**
+IMU in one device. Over Ethernet it streams **80 × 60 depth frames**
 through a simple TCP command protocol. This repository shows how to connect to
 it, stream and display frames, and read or change the device configuration.
 
@@ -16,8 +16,8 @@ it, stream and display frames, and read or change the device configuration.
 
 | Path | What it is |
 |---|---|
-| [`include/network_streaming.h`](include/network_streaming.h) | Protocol constants: commands, frame sizes, header markers |
-| [`examples/network_streaming/`](examples/network_streaming/) | Windows console app that streams and displays depth + IR |
+| [`include/network_streaming.h`](include/network_streaming.h) | Protocol constants: commands, frame size, responses |
+| [`examples/network_streaming/`](examples/network_streaming/) | Windows console app that streams and displays depth frames |
 | [`docs/protocol.md`](docs/protocol.md) | Full command reference |
 | [`CMakeLists.txt`](CMakeLists.txt) | CMake build (recommended) |
 | [`vs2015/`](vs2015/) | Original Visual Studio 2015 solution |
@@ -25,23 +25,25 @@ it, stream and display frames, and read or change the device configuration.
 ## What the sample does
 
 `network_streaming` connects to the device on TCP port `1111`, prints the
-device info, sends `start`, then requests frames in a loop:
+device info, sends `start`, then requests depth frames in a loop:
 
 - **Console:** hostname, serial number, MAC address, firmware version and
   build date, then the depth at the center pixel for each frame.
 - **"Depth" window:** depth map drawn as a JET false-color heatmap.
-- **"IR" window:** IR amplitude image in grayscale.
 
 | Key | Action |
 |---|---|
-| `1` | Depth frames only (`get depthframe`) |
-| `2` | IR frames only (`get irframe`) |
-| `3` | Depth + IR (`get depthirframe`) |
-| `4` | Depth + IR with header check (`get h_depthirframe`, default) |
 | `i` | Print device info again |
 | `Esc` | Stop streaming and exit |
 
 If the connection drops, the sample reconnects automatically.
+
+### Depth only, no IR images
+
+The device outputs **depth data only**. IR (grayscale) images were removed in
+firmware 2.x for privacy protection.
+
+Tested with firmware ES_V2.0.9 (built 2023-04-25).
 
 ## Requirements
 
@@ -90,10 +92,12 @@ The protocol is plain TCP, so any language works. A minimal frame request:
 
 1. Connect to `<device-ip>:1111`.
 2. Send `start` and read the text response.
-3. Send `get h_depthirframe` and read exactly **19,208 bytes**.
-4. Check that bytes 0–1 are `F7 F7` and bytes 19,204–19,205 are `F8 F8`.
-5. Bytes 4–9,603 are depth and 9,604–19,203 are IR: 80 × 60, `uint16`,
-   little-endian.
+3. Send `get depthframe` and read exactly **9,600 bytes**: 80 × 60 depth
+   values, `uint16`, little-endian, row by row.
+4. Repeat step 3 for each frame, then send `stop`.
+
+Commands the firmware doesn't support return a 128-byte text reply starting
+with `Unknown Cmd` instead of frame data.
 
 See [`docs/protocol.md`](docs/protocol.md) for every command, including network
 configuration and factory reset.

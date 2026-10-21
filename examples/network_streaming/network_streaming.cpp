@@ -20,13 +20,13 @@ using namespace std;
 
 using namespace cv;
 
-static char frameBuff[FRAME_HEADER_START_SIZE + DEPTH_IR_FRAME_SIZE + FRAME_HEADER_END_SIZE];
+static char frameBuff[DEPTH_FRAME_SIZE];
 
 bool depth_camera_connect(SOCKET *sock, char *);
 bool depth_camera_disconnect(SOCKET sock);
 bool depth_camera_start(SOCKET sock);
 bool depth_camera_stop(SOCKET sock);
-bool depth_camera_get_frame(SOCKET sock, char* frame_cmd, char *frame_buf, unsigned int buf_size);
+bool depth_camera_get_frame(SOCKET sock, char *frame_buf, unsigned int buf_size);
 bool depth_camera_get_info(SOCKET sock, unsigned int cmd);
 bool depth_camera_set_info(SOCKET sock, unsigned int cmd, char *data);
 bool depth_camera_reconfig_static_ip(SOCKET sock);
@@ -53,15 +53,12 @@ void DieWithError(char *errorMessage)  /* Error handling function */
 int main(int argc, char *argv[])
 {
     SOCKET sock;                             /* Socket descriptor */
-    unsigned short depthIrFrame[DEPTH_IR_FRAME_PIXELS];
-    char *depth_ir_fb = (char *)depthIrFrame;
+    unsigned short depthFrame[DEPTH_FRAME_PIXELS];
+    char *depth_fb = (char *)depthFrame;
     Mat depth = Mat(DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH, CV_16UC1, Scalar(0));
-    Mat ir = Mat(DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH, CV_16UC1, Scalar(0));
     Mat depth8U = Mat(DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH, CV_8UC1, Scalar(0));
-    Mat ir8U = Mat(DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH, CV_8UC1, Scalar(0));
     Mat colorMap = Mat(DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH, CV_8UC1, Scalar(0));
     char target_device_ip[20];
-    int get_frame_type = GET_H_DEPTH_IR_FRAME;
 
     if (argc > 1) {
         strncpy_s(target_device_ip, argv[1], _TRUNCATE);
@@ -129,99 +126,26 @@ reconnect:
     printf("\nStart receiving frames\n");
 
     /*
-    * Example at receiving 120 frames from server and display
-    * in screen. Also print depth of center pixel to console
+    * Receive depth frames from the device and display them on
+    * screen. Also print depth of center pixel to console
     */
     while (iWaitKey != 27) {
-        static unsigned int frame_count = 0;
-        bool new_frame = false;
-        char *get_frame_cmd;
+        memset(depthFrame, 0x0, sizeof(depthFrame));
 
-        memset(depthIrFrame, 0x0, sizeof(depthIrFrame));
-
-        switch (get_frame_type) {
-        case GET_DEPTH_FRAME:
-            get_frame_cmd = (char *)CMD_CAMERA_GET_DEPTH_FRAME;
-            break;
-        case GET_IR_FRAME:
-            get_frame_cmd = (char *)CMD_CAMERA_GET_IR_FRAME;
-            break;
-        case GET_DEPTH_IR_FRAME:
-            get_frame_cmd = (char *)CMD_CAMERA_GET_DEPTH_IR_FRAME;
-            break;
-        case GET_H_DEPTH_IR_FRAME:
-            /* FALLTHRU */
-        default:
-            get_frame_cmd = (char *)CMD_CAMERA_GET_H_DEPTH_IR_FRAME;
-            break;
-        }
-
-        new_frame = depth_camera_get_frame(sock, get_frame_cmd, depth_ir_fb, sizeof(depthIrFrame));
-
-        if (new_frame) {
-            bool update_depth_frame = false;
-            bool update_ir_frame = false;
-
-            frame_count++;
-
-            switch (get_frame_type) {
-            case GET_DEPTH_FRAME:
-                memcpy(depth.ptr<unsigned short>(0), depth_ir_fb, DEPTH_FRAME_SIZE);
-                update_depth_frame = true;
-                break;
-            case GET_IR_FRAME:
-                memcpy(ir.ptr<unsigned short>(0), depth_ir_fb, IR_FRAME_SIZE);
-                update_ir_frame = true;
-                get_frame_cmd = (char *)CMD_CAMERA_GET_IR_FRAME;
-                break;
-            case GET_DEPTH_IR_FRAME:
-                /* FALLTHRU */
-            case GET_H_DEPTH_IR_FRAME:
-            default:
-                /*
-                * Split frame to depth and ir frames
-                */
-                memcpy(depth.ptr<unsigned short>(0), depth_ir_fb, DEPTH_FRAME_SIZE);
-                memcpy(ir.ptr<unsigned short>(0), &depth_ir_fb[DEPTH_FRAME_SIZE], DEPTH_FRAME_SIZE);
-                update_depth_frame = true;
-                update_ir_frame = true;
-            }
-
-            /*
-            * Split frame to depth and ir frames
-            */
-            if (update_depth_frame) {
-                printf("Depth at center pixel (x = 40, y = 30) is %d\n", depth.at<unsigned short>(DEPTH_FRAME_HEIGHT >> 1, DEPTH_FRAME_WIDTH >> 1));
-                depth.convertTo(depth8U, CV_8UC1, 255.0 / 4096);
-                applyColorMap(depth8U, colorMap, COLORMAP_JET);
-                imshow("Depth", colorMap);
-            }
-
-            if (update_ir_frame) {
-                ir.convertTo(ir8U, CV_8UC1, 255.0 / 1024);
-                imshow("IR", ir8U);
-            }
-        }
-        else {
+        if (depth_camera_get_frame(sock, depth_fb, sizeof(depthFrame)) == false) {
             depth_camera_disconnect(sock);
             goto reconnect;
         }
 
+        memcpy(depth.ptr<unsigned short>(0), depth_fb, DEPTH_FRAME_SIZE);
+        printf("Depth at center pixel (x = 40, y = 30) is %d\n", depth.at<unsigned short>(DEPTH_FRAME_HEIGHT >> 1, DEPTH_FRAME_WIDTH >> 1));
+        depth.convertTo(depth8U, CV_8UC1, 255.0 / 4096);
+        applyColorMap(depth8U, colorMap, COLORMAP_JET);
+        imshow("Depth", colorMap);
+
         iWaitKey = waitKey(1) & 0xFF;
 
         switch (iWaitKey) {
-        case '1':
-            get_frame_type = GET_DEPTH_FRAME;
-            break;
-        case '2':
-            get_frame_type = GET_IR_FRAME;
-            break;
-        case '3':
-            get_frame_type = GET_DEPTH_IR_FRAME;
-            break;
-        case '4':
-            get_frame_type = GET_H_DEPTH_IR_FRAME;
-            break;
         case 'i':
             depth_camera_get_info(sock, GET_HOSTNAME);
             depth_camera_get_info(sock, GET_PROD_SN);
@@ -232,15 +156,15 @@ reconnect:
         }
     }
 
+    /*
+     * Esc pressed: leave even if stop fails (reconnecting here would loop,
+     * as iWaitKey is still 27)
+     */
     if (depth_camera_stop(sock) == false) {
         fprintf(stderr, "failed to stop depth camera\n");
-        goto reconnect;
     }
 
-    if (depth_camera_disconnect(sock) == false) {
-        fprintf(stderr, "failed to disconnect depth camera\n");
-        goto reconnect;
-    }
+    depth_camera_disconnect(sock);
 
     return 0;
 }
@@ -439,80 +363,43 @@ bool depth_camera_stop(SOCKET sock)
 /*
  * Function name:depth_camera_get_frame()
  * Description:
- *   functiont to get one depth and/or IR frame from device
- *   supported frame command
- *     - CMD_CAMERA_GET_DEPTH_FRAME: Get a Depth frame (9600 bytes)
- *     - CMD_CAMERA_GET_IR_FRAME: Get a IR frame (9600 bytes)
- *     - CMD_CAMERA_GET_DEPTH_IR_FRAME: Get a Depth + IR frame (19200 bytes)
- *             first half frame (9600 bytes) contains Depth
- *             second half frame (9600 bytes) contains IR
- *     - CMD_CAMERA_GET_H_DEPTH_IR_FRAME: Get a Depth + IR frame with header info (19208 bytes)
- *             byte 0-3: Header start (0xF7 0xF7 0x00 0x00)
- *             byte 4-9603 (9600 bytes): Depth
- *             byte 9604-19203 (9600 bytes): IR
- *             byte 19204-19207: Header end (0xF8 0xF8 0x00 0x00)
+ *   function to get one depth frame from device by sending
+ *   CMD_CAMERA_GET_DEPTH_FRAME. The device answers with DEPTH_FRAME_SIZE
+ *   (9600) bytes: 80 x 60 pixels, 16-bit little-endian, row by row.
  *
  *     Note:
- *       1. calling function with "CMD_CAMERA_GET_H_DEPTH_IR_FRAME" will force the function to
- *          check header info. Return "false" if frame length or header info is incorrect.
- *          Otherwise, copy the Depth + IR frame to user buffer WITHOUT header
- *       2. First two bytes in header start (0xF7) and end (0xF8) are fixed value. However,
- *          last two bytes in header start/end are reserved for future use. 0x00 for now, but
- *          might be change for other purpose. Don't use these two bytes for header validation.
+ *       1. Call depth_camera_start() first. Without it the device answers with
+ *          CMD_RESP_LEN zero bytes instead of a frame, and this function times out.
+ *       2. Commands the firmware doesn't support are answered with a CMD_RESP_LEN
+ *          text response starting with CMD_RESP_UNKNOWN ("Unknown Cmd (State = x)").
+ *          The function detects it, prints it and returns false.
  *
  * Input:
  *   sock - socket number
- *   frame_cmd - cmd to get depth and/or IR frame with/without header
  *   user_buf - pointer to user memory for storing frame data
  *   buf_size - indicate the size of user_buf
  * Output:
  *   true - get frame successfully
  *   false - failed to get depth frame from device
  */
-bool depth_camera_get_frame(SOCKET sock, char *frame_cmd, char *user_buf, unsigned int buf_size)
+bool depth_camera_get_frame(SOCKET sock, char *user_buf, unsigned int buf_size)
 {
     char cmdString[CMDBUFSIZE];             /* String to send to server */
     int cmdStringLen;                       /* Length of string to echo */
     int bytesRcvd, totalBytesRcvd;          /* Bytes read in single recv() and total bytes read */
-    char *p_frameBuff = frameBuff;
-    int xfer_len = 0;
-    int frame_len = 0, copy_len = 0;
-    bool frame_w_header = false;
+    int unknownLen = (int)strlen(CMD_RESP_UNKNOWN);
+    int copy_len;
 
-    if (!frame_cmd || !user_buf || buf_size == 0) {
-        return (false);
-    }
-
-    if (!strncmp(frame_cmd, CMD_CAMERA_GET_DEPTH_FRAME, sizeof(CMD_CAMERA_GET_DEPTH_FRAME))) {
-        frame_len = DEPTH_FRAME_SIZE;
-        xfer_len = DEPTH_FRAME_SIZE;
-        frame_w_header = false;
-    }
-    else if (!strncmp(frame_cmd, CMD_CAMERA_GET_IR_FRAME, sizeof(CMD_CAMERA_GET_IR_FRAME))) {
-        frame_len = IR_FRAME_SIZE;
-        xfer_len = IR_FRAME_SIZE;
-        frame_w_header = false;
-    }
-    else if (!strncmp(frame_cmd, CMD_CAMERA_GET_DEPTH_IR_FRAME, sizeof(CMD_CAMERA_GET_DEPTH_IR_FRAME))) {
-        frame_len = DEPTH_IR_FRAME_SIZE;
-        xfer_len = DEPTH_IR_FRAME_SIZE;
-        frame_w_header = false;
-    } else if (!strncmp(frame_cmd, CMD_CAMERA_GET_H_DEPTH_IR_FRAME, sizeof(CMD_CAMERA_GET_H_DEPTH_IR_FRAME))) {
-        frame_len = DEPTH_IR_FRAME_SIZE;
-        xfer_len = FRAME_HEADER_START_SIZE + DEPTH_IR_FRAME_SIZE + FRAME_HEADER_END_SIZE;
-        frame_w_header = true;
-    }
-    else {
-        printf("Not supported cmd (%s)\n", frame_cmd);
+    if (!user_buf || buf_size == 0) {
         return (false);
     }
 
     memset(cmdString, 0x0, sizeof(cmdString));
-    sprintf_s(cmdString, "%s", frame_cmd);
+    sprintf_s(cmdString, "%s", CMD_CAMERA_GET_DEPTH_FRAME);
     cmdStringLen = (int)strlen(cmdString);
 
     /*
-    * Send start cmd to depth camera for starting depth streaming
+    * Send get depth frame cmd to depth camera
     */
     if (send(sock, cmdString, cmdStringLen, 0) != cmdStringLen) {
         fprintf(stderr, "send() sent a different number of bytes than expected\n");
@@ -520,41 +407,38 @@ bool depth_camera_get_frame(SOCKET sock, char *frame_cmd, char *user_buf, unsign
     }
 
     totalBytesRcvd = 0;
-    memset(p_frameBuff, 0x0, sizeof(frameBuff));
+    memset(frameBuff, 0x0, sizeof(frameBuff));
 
-    while (totalBytesRcvd < xfer_len)
+    while (totalBytesRcvd < DEPTH_FRAME_SIZE)
     {
-        if ((bytesRcvd = recv(sock, p_frameBuff + totalBytesRcvd,
-            xfer_len - totalBytesRcvd, 0)) <= 0) {
-            printf("recv() failed or connection closed prematurely");
+        if ((bytesRcvd = recv(sock, frameBuff + totalBytesRcvd,
+            DEPTH_FRAME_SIZE - totalBytesRcvd, 0)) <= 0) {
+            printf("recv() failed or connection closed prematurely\n");
             return (false);
         }
 
         totalBytesRcvd += bytesRcvd;   /* Keep tally of total bytes */
-    }
 
-    if (frame_w_header) {
         /*
-        * Verify frame header and frame end
+        * Text response instead of frame data, see note above
         */
-        p_frameBuff = (char *)frameBuff;
-        if ((frameBuff[0] != (char)FRAME_HEADER_START_B0) ||
-            (frameBuff[1] != (char)FRAME_HEADER_START_B1) ||
-            (frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE] != (char)FRAME_HEADER_END_B0) ||
-            (frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE + 1] != (char)FRAME_HEADER_END_B1)) {
-            printf("Incorrect header (0x%.2X 0x%.2X) or end (0x%.2X 0x%.2X)\n",
-                (unsigned char)frameBuff[0], (unsigned char)frameBuff[1],
-                (unsigned char)frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE],
-                (unsigned char)frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE + 1]);
+        if (totalBytesRcvd >= unknownLen && totalBytesRcvd <= CMD_RESP_LEN &&
+            !strncmp(frameBuff, CMD_RESP_UNKNOWN, unknownLen)) {
+            while (totalBytesRcvd < CMD_RESP_LEN) {
+                if ((bytesRcvd = recv(sock, frameBuff + totalBytesRcvd,
+                    CMD_RESP_LEN - totalBytesRcvd, 0)) <= 0) {
+                    break;
+                }
+                totalBytesRcvd += bytesRcvd;
+            }
+            frameBuff[CMD_RESP_LEN - 1] = '\0';
+            printf("Device rejected \"%s\": %s\n", CMD_CAMERA_GET_DEPTH_FRAME, frameBuff);
             return (false);
         }
-        copy_len = buf_size > (unsigned int)frame_len ? frame_len : (int)buf_size;
-        memcpy(user_buf, &frameBuff[FRAME_HEADER_START_SIZE], copy_len);
     }
-    else {
-        copy_len = buf_size > (unsigned int)frame_len ? frame_len : (int)buf_size;
-        memcpy(user_buf, frameBuff, copy_len);
-    }
+
+    copy_len = buf_size > DEPTH_FRAME_SIZE ? DEPTH_FRAME_SIZE : (int)buf_size;
+    memcpy(user_buf, frameBuff, copy_len);
 
     return (true);
 }

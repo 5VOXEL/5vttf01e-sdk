@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.1 — 2026-10-21
+
+Tested on a real device with firmware ES_V2.0.9.
+
+### Removed
+- IR frame support (`get irframe`, `get depthirframe`, `get h_depthirframe`),
+  the "IR" window and the `1`–`4` frame-type keys. IR images were removed from
+  firmware 2.x for privacy protection; the SDK is now depth only.
+
+### Fixed
+- Sample never displayed a frame on firmware 2.x: it requested depth + IR,
+  which the device answers with `Unknown Cmd`, then timed out and reconnected
+  forever. It now requests `get depthframe` only.
+- `depth_camera_get_frame()` recognises an `Unknown Cmd` reply instead of
+  waiting for the receive timeout.
+- Pressing Esc when `stop` failed reconnected in a loop instead of exiting.
+
+### Changed
+- `depth_camera_get_frame(sock, buf, size)` no longer takes a frame command.
+
 ## 1.1.0 — 2026-10-21
 
 First public release.

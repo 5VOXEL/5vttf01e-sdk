@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(5vttf01e_sdk
-    VERSION 1.1.0
+    VERSION 1.1.1
     DESCRIPTION "5Voxel 5VTTF01E (VoxelCount) ToF camera network streaming SDK"
     LANGUAGES CXX)
 

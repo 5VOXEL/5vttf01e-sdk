@@ -12,6 +12,20 @@ it, stream and display frames, and read or change the device configuration.
 ![language](https://img.shields.io/badge/C%2B%2B-11-informational)
 ![license](https://img.shields.io/badge/license-BSD--3--Clause-green)
 
+## Quick check (no build needed)
+
+To check a device is working, download
+**[`5vttf01e-viewer-<version>-win-x64.zip`](https://github.com/5VOXEL/5vttf01e-sdk/releases/latest)**
+from the latest release, unzip it and run:
+
+```bat
+network_streaming.exe <device-ip>
+```
+
+It's a single 64-bit Windows exe with OpenCV built in, so nothing else needs
+installing. You should see the device info in the console and a live depth
+heatmap window. See [Run](#run) for how to find the device IP.
+
 ## Contents
 
 | Path | What it is |

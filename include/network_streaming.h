@@ -4,6 +4,7 @@
 *
 *******************************************************/
 #ifndef __NETWORK_STREAMING_HEADER__
+#define __NETWORK_STREAMING_HEADER__
 
 #define DEPTH_CAMERA_SERVER_IP    "192.168.0.100" /* Default IP */
 #define DEPTH_CAMERA_SERVER_PORT  1111
@@ -20,13 +21,13 @@
 #define FRAME_HEADER_START_SIZE 4 /* 0xF7 0xF7 0x00 0x00 */
 #define FRAME_HEADER_START_B0   0xF7
 #define FRAME_HEADER_START_B1   0xF7
-#define FRAME_HEADER_START_B2   0x00  /* Reserved for futhur use */
-#define FRAME_HEADER_START_B3   0x00  /* Reserved for futhur use */
+#define FRAME_HEADER_START_B2   0x00  /* Reserved for future use */
+#define FRAME_HEADER_START_B3   0x00  /* Reserved for future use */
 #define FRAME_HEADER_END_SIZE   4 /* 0xF8 0xF8 0x00 0x00 */
 #define FRAME_HEADER_END_B0     0xF8
 #define FRAME_HEADER_END_B1     0xF8
-#define FRAME_HEADER_END_B2     0x00  /* Reserved for futhur use */
-#define FRAME_HEADER_END_B3     0x00  /* Reserved for futhur use */
+#define FRAME_HEADER_END_B2     0x00  /* Reserved for future use */
+#define FRAME_HEADER_END_B3     0x00  /* Reserved for future use */
 
 #define CMD_GET_PROD_SN         "get product_sn"
 #define CMD_GET_FW_VER          "get fw_ver"
@@ -42,6 +43,8 @@
 #define CMD_SET_SUBNET_MASK     "set subnet_mask"
 #define CMD_SET_DEFAULT_GATEWAY "set default_gateway"
 #define CMD_SET_HOSTNAME        "set hostname"
+#define CMD_SET_DNS             "set dns"
+#define CMD_SET_DHCP            "set dhcp"
 #define CMD_GET_HOSTNAME        "get hostname"
 #define CMD_CONFIG_SAVE_REBOOT  "set save_config_n_reboot"
 #define CMD_RESP_SET_OK         "Set variable OK"
@@ -63,7 +66,8 @@ enum depthcam_set_cmd_type {
     SET_SUBNET_MASK,
     SET_DEFAULT_GATEWAY,
     SET_HOSTNAME,
+    SET_DNS,
+    SET_DHCP,
 };
 
-#define __NETWORK_STREAMING_HEADER__
 #endif /* __NETWORK_STREAMING_HEADER__ */

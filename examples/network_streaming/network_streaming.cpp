@@ -1,6 +1,6 @@
 /*******************************************************
 *
-*  Copyright (c) 2019 5Voxel
+*  Copyright (c) 2019-2026 5Voxel
 *
 *******************************************************/
 #include <stdio.h>
@@ -13,7 +13,6 @@
 #include "opencv2/core/version.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
 
 #pragma comment( lib, "ws2_32")
 
@@ -47,16 +46,15 @@ void DieWithError(char *errorMessage)  /* Error handling function */
  * Description:
  *   Main funciton for network streaming depth info from camera
  * Input:
- *   None
+ *   argv[1] - (optional) device ip address, prompted for if omitted
  * Output:
- *   None
+ *   0 on exit
  */
-void main(void)
+int main(int argc, char *argv[])
 {
-    int sock;                               /* Socket descriptor */
+    SOCKET sock;                             /* Socket descriptor */
     unsigned short depthIrFrame[DEPTH_IR_FRAME_PIXELS];
     char *depth_ir_fb = (char *)depthIrFrame;
-    int pix_cnt;
     Mat depth = Mat(DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH, CV_16UC1, Scalar(0));
     Mat ir = Mat(DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH, CV_16UC1, Scalar(0));
     Mat depth8U = Mat(DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH, CV_8UC1, Scalar(0));
@@ -65,15 +63,22 @@ void main(void)
     char target_device_ip[20];
     int get_frame_type = GET_H_DEPTH_IR_FRAME;
 
-    printf("Please input the IP address for the target device\n");
-    printf("\nip address : ");
-    fgets(target_device_ip, sizeof(target_device_ip), stdin);
-    target_device_ip[strcspn(target_device_ip, "\r\n")] = 0;
+    if (argc > 1) {
+        strncpy_s(target_device_ip, argv[1], _TRUNCATE);
+    }
+    else {
+        printf("Please input the IP address for the target device\n");
+        printf("\nip address : ");
+        fgets(target_device_ip, sizeof(target_device_ip), stdin);
+        target_device_ip[strcspn(target_device_ip, "\r\n")] = 0;
+    }
+    printf("Connecting to %s:%d\n", target_device_ip, DEPTH_CAMERA_SERVER_PORT);
 
 reconnect:
 
-    if (depth_camera_connect((SOCKET *)&sock, target_device_ip) == false) {
-        fprintf(stderr, "failed to connect depth camera connect\n");
+    if (depth_camera_connect(&sock, target_device_ip) == false) {
+        fprintf(stderr, "failed to connect depth camera, retrying in 1s\n");
+        Sleep(1000);
         goto reconnect;
     }
 
@@ -132,7 +137,7 @@ reconnect:
         bool new_frame = false;
         char *get_frame_cmd;
 
-        memset(depth_ir_fb, 0x0, sizeof(depth_ir_fb));
+        memset(depthIrFrame, 0x0, sizeof(depthIrFrame));
 
         switch (get_frame_type) {
         case GET_DEPTH_FRAME:
@@ -237,7 +242,7 @@ reconnect:
         goto reconnect;
     }
 
-    return;
+    return 0;
 }
 
 /*
@@ -274,8 +279,9 @@ bool depth_camera_connect(SOCKET *sock, char *target_device_ip)
     /*
     * Create a reliable, stream socket using TCP
     */
-    if ((*sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+    if ((*sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
         fprintf(stderr, "socket() failed\n");
+        WSACleanup();
         return (false);
     }
 
@@ -283,6 +289,7 @@ bool depth_camera_connect(SOCKET *sock, char *target_device_ip)
 
     if (ret == SOCKET_ERROR) {
         fprintf(stderr, "setsockopt() failed\n");
+        depth_camera_disconnect(*sock);
         return (false);
     }
 
@@ -297,8 +304,9 @@ bool depth_camera_connect(SOCKET *sock, char *target_device_ip)
     /*
      * Establish the connection to the depth camera server
      */
-    if (connect(*sock, (struct sockaddr *) &depthCameraServAddr, sizeof(depthCameraServAddr)) < 0) {
+    if (connect(*sock, (struct sockaddr *) &depthCameraServAddr, sizeof(depthCameraServAddr)) == SOCKET_ERROR) {
         fprintf(stderr, "connect() failed\n");
+        depth_camera_disconnect(*sock);
         return (false);
     }
 
@@ -500,7 +508,7 @@ bool depth_camera_get_frame(SOCKET sock, char *frame_cmd, char *user_buf, unsign
     }
 
     memset(cmdString, 0x0, sizeof(cmdString));
-    sprintf_s(cmdString, frame_cmd);
+    sprintf_s(cmdString, "%s", frame_cmd);
     cmdStringLen = (int)strlen(cmdString);
 
     /*
@@ -531,20 +539,20 @@ bool depth_camera_get_frame(SOCKET sock, char *frame_cmd, char *user_buf, unsign
         */
         p_frameBuff = (char *)frameBuff;
         if ((frameBuff[0] != (char)FRAME_HEADER_START_B0) ||
-            (frameBuff[1] != (char)FRAME_HEADER_START_B0) ||
+            (frameBuff[1] != (char)FRAME_HEADER_START_B1) ||
             (frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE] != (char)FRAME_HEADER_END_B0) ||
-            (frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE + 1] != (char)FRAME_HEADER_END_B0)) {
+            (frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE + 1] != (char)FRAME_HEADER_END_B1)) {
             printf("Incorrect header (0x%.2X 0x%.2X) or end (0x%.2X 0x%.2X)\n",
-                frameBuff[0], frameBuff[1],
-                frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE],
-                frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE + 1]);
+                (unsigned char)frameBuff[0], (unsigned char)frameBuff[1],
+                (unsigned char)frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE],
+                (unsigned char)frameBuff[DEPTH_IR_FRAME_SIZE + FRAME_HEADER_START_SIZE + 1]);
             return (false);
         }
-        copy_len = buf_size > frame_len ? frame_len : buf_size;
+        copy_len = buf_size > (unsigned int)frame_len ? frame_len : (int)buf_size;
         memcpy(user_buf, &frameBuff[FRAME_HEADER_START_SIZE], copy_len);
     }
     else {
-        copy_len = buf_size > frame_len ? frame_len : buf_size;
+        copy_len = buf_size > (unsigned int)frame_len ? frame_len : (int)buf_size;
         memcpy(user_buf, frameBuff, copy_len);
     }
 
@@ -574,35 +582,35 @@ bool depth_camera_get_info(SOCKET sock, unsigned int cmd)
     switch (cmd) {
     case GET_PROD_SN:
         sprintf_s(cmdString, CMD_GET_PROD_SN);
-        bRet = depth_camera_send_cmd(sock, cmdString, strlen(cmdString), cmdRcvBuf);
+        bRet = depth_camera_send_cmd(sock, cmdString, (int)strlen(cmdString), cmdRcvBuf);
         if (bRet) {
             printf("Product SN: %s\n", cmdRcvBuf);
         }
         break;
     case GET_HOSTNAME:
         sprintf_s(cmdString, CMD_GET_HOSTNAME);
-        bRet = depth_camera_send_cmd(sock, cmdString, strlen(cmdString), cmdRcvBuf);
+        bRet = depth_camera_send_cmd(sock, cmdString, (int)strlen(cmdString), cmdRcvBuf);
         if (bRet) {
             printf("Host name: %s\n", cmdRcvBuf);
         }
         break;
     case GET_MAC_ADDR:
         sprintf_s(cmdString, CMD_GET_MAC_ADDR);
-        bRet = depth_camera_send_cmd(sock, cmdString, strlen(cmdString), cmdRcvBuf);
+        bRet = depth_camera_send_cmd(sock, cmdString, (int)strlen(cmdString), cmdRcvBuf);
         if (bRet) {
             printf("MAC addr: %s\n", cmdRcvBuf);
         }
         break; 
     case GET_FW_VER:
         sprintf_s(cmdString, CMD_GET_FW_VER);
-        bRet = depth_camera_send_cmd(sock, cmdString, strlen(cmdString), cmdRcvBuf);
+        bRet = depth_camera_send_cmd(sock, cmdString, (int)strlen(cmdString), cmdRcvBuf);
         if (bRet) {
             printf("FW version: %s\n", cmdRcvBuf);
         }
         break;
     case GET_FW_BUILD_DATE:
         sprintf_s(cmdString, CMD_GET_FW_BUILD_DATE);
-        bRet = depth_camera_send_cmd(sock, cmdString, strlen(cmdString), cmdRcvBuf);
+        bRet = depth_camera_send_cmd(sock, cmdString, (int)strlen(cmdString), cmdRcvBuf);
         if (bRet) {
             printf("Build date: %s\n", cmdRcvBuf);
         }
@@ -639,7 +647,7 @@ bool depth_camera_set_info(SOCKET sock, unsigned int cmd, char *data)
     /*
      * input parameter check
      */
-    if (sock == NULL || data == nullptr) {
+    if (sock == INVALID_SOCKET || data == nullptr) {
         return (false);
     }
 
@@ -672,16 +680,28 @@ bool depth_camera_set_info(SOCKET sock, unsigned int cmd, char *data)
         */
         sprintf_s(cmdString, "%s=%s", CMD_SET_HOSTNAME, data);
         break;
+    case SET_DNS:
+        /*
+        * data format: X.Y.Z.W (optional, device defaults to 8.8.8.8)
+        * example: 8.8.8.8
+        */
+        sprintf_s(cmdString, "%s=%s", CMD_SET_DNS, data);
+        break;
+    case SET_DHCP:
+        /*
+        * data format: "1" for DHCP, "0" for static ip
+        * example: 0
+        */
+        sprintf_s(cmdString, "%s=%s", CMD_SET_DHCP, data);
+        break;
     default:
         printf("Unknown set command\n");
         return (bRet);
     }
 
-    bRet = depth_camera_send_cmd(sock, cmdString, strlen(cmdString), cmdRcvBuf);
+    bRet = depth_camera_send_cmd(sock, cmdString, (int)strlen(cmdString), cmdRcvBuf);
     if (bRet) {
-        if (strncmp(cmdRcvBuf, CMD_RESP_SET_OK, sizeof(CMD_RESP_SET_OK)) == 0) {
-            bRet = true;
-        }
+        bRet = (strncmp(cmdRcvBuf, CMD_RESP_SET_OK, strlen(CMD_RESP_SET_OK)) == 0);
     }
 
     printf("Cmd (%s), Resp: %s\n", cmdString, cmdRcvBuf);
@@ -771,6 +791,12 @@ bool depth_camera_reconfig_static_ip (SOCKET sock)
         return (bRet);
     }
 
+    bRet = depth_camera_set_info(sock, SET_DHCP, (char *)"0");
+    if (!bRet) {
+        printf("Failed to switch device to static ip mode\n");
+        return (bRet);
+    }
+
     bRet = depth_camera_config_save_n_reboot(sock);
     if (!bRet) {
         printf("Failed to save & reboot device\n");
@@ -802,7 +828,7 @@ static bool depth_camera_config_save_n_reboot (SOCKET sock)
     memset(cmdRcvBuf, 0x0, RCVBUFSIZE);
 
     sprintf_s(cmdString, CMD_CONFIG_SAVE_REBOOT);
-    bRet = depth_camera_send_cmd(sock, cmdString, strlen(cmdString), cmdRcvBuf);
+    bRet = depth_camera_send_cmd(sock, cmdString, (int)strlen(cmdString), cmdRcvBuf);
 
     return (bRet);
 }
@@ -874,7 +900,7 @@ static bool depth_camera_send_cmd(SOCKET sock, char *camera_cmd, int len, char *
      * Copy response to user if point is not NULL
      */
     if (cmd_resp != NULL) {
-        memcpy(cmd_resp, cmdRcvBuf, (int)strlen(cmdRcvBuf));
+        memcpy(cmd_resp, cmdRcvBuf, strlen(cmdRcvBuf) + 1);
     }
 
     bRet = true;
